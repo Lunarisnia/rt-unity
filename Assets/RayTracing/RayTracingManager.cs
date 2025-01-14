@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 [ExecuteAlways]
@@ -5,9 +6,12 @@ using UnityEngine;
 public class RayTracingManager : MonoBehaviour
 {
     // We declare our shader code to be imported
-    public ComputeShader RayTracingShader;
+    public Shader MaterialShader;
 
     private Camera _camera;
+    private Material _material;
+
+    private ComputeBuffer _spheresBuffer;
 
     // Our Temporary Render target to draw into
     private RenderTexture _target;
@@ -20,6 +24,8 @@ public class RayTracingManager : MonoBehaviour
     private void OnRenderImage(RenderTexture source, RenderTexture dest)
     {
         if (!Application.isPlaying) Debug.Log("WTf");
+        InitMaterial();
+        ScanSpheres();
         SetShaderParameters();
         // Call our custom Render
         Render(dest);
@@ -27,19 +33,18 @@ public class RayTracingManager : MonoBehaviour
 
     private void Render(RenderTexture dest)
     {
-        Debug.Log("Name: " + name);
-
         // Initialize Render Target
-        InitRenderTexture();
+        // InitRenderTexture();
 
-        // Set the compute shader render target to the _target
-        RayTracingShader.SetTexture(0, "Result", _target);
-        var threadGroupsX = Mathf.CeilToInt(Screen.width / 8.0f);
-        var threadGroupsY = Mathf.CeilToInt(Screen.height / 8.0f);
-        // Run the shader with the config
-        RayTracingShader.Dispatch(0, threadGroupsX, threadGroupsY, 1);
+        // Run the shader and render to the screen
+        Graphics.Blit(null, dest, _material);
 
-        Graphics.Blit(_target, dest);
+        // Graphics.Blit(_target, dest);
+    }
+
+    private void InitMaterial()
+    {
+        _material = new Material(MaterialShader);
     }
 
     private void InitRenderTexture()
@@ -60,9 +65,43 @@ public class RayTracingManager : MonoBehaviour
         _target.Create();
     }
 
+    // WTF: MEMORY LEAK WTF?
+    private void ScanSpheres()
+    {
+        var sphereObjects = FindObjectsByType<RayTracedSphere>(FindObjectsSortMode.InstanceID);
+        // // Debug.Log("Spheres: " + sphereObjects.Length);
+        // Debug.Log(sphereObjects[1]);
+        if (sphereObjects.Length < 1)
+            return;
+        var spheres = new Sphere[sphereObjects.Length];
+        for (var i = 0; i < sphereObjects.Length; i++)
+        {
+            spheres[i].position = sphereObjects[i].transform.position;
+            spheres[i].radius = sphereObjects[i].transform.localScale.x * 0.5f;
+            spheres[i].colour = new Vector3(1.0f, 1.0f, 1.0f);
+            spheres[i].material = sphereObjects[i].Material;
+        }
+
+        var stride = Marshal.SizeOf<Sphere>();
+        var len = sphereObjects.Length;
+
+        if (_spheresBuffer == null || !_spheresBuffer.IsValid() || _spheresBuffer.count != len ||
+            _spheresBuffer.stride != stride)
+        {
+            if (_spheresBuffer != null) _spheresBuffer.Release();
+            _spheresBuffer =
+                new ComputeBuffer(len, stride, ComputeBufferType.Structured);
+        }
+
+        _spheresBuffer.SetData(spheres);
+        _material.SetInt("NumOfSpheres", spheres.Length);
+        _material.SetBuffer("SpheresBuffer", _spheresBuffer);
+    }
+
     private void SetShaderParameters()
     {
-        RayTracingShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
-        RayTracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
+        _material.SetMatrix("CameraLocalToWorldMatrix", _camera.cameraToWorldMatrix);
+        _material.SetVector("CameraWorldSpacePosition", _camera.transform.position);
+        _material.SetMatrix("CameraInverseProjection", _camera.projectionMatrix.inverse);
     }
 }
