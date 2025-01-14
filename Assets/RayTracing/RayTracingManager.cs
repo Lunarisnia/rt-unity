@@ -15,6 +15,7 @@ public class RayTracingManager : MonoBehaviour
 
     // Our Temporary Render target to draw into
     private RenderTexture _target;
+    private ComputeBuffer secondSphere;
 
     private void Awake()
     {
@@ -65,12 +66,9 @@ public class RayTracingManager : MonoBehaviour
         _target.Create();
     }
 
-    // WTF: MEMORY LEAK WTF?
     private void ScanSpheres()
     {
         var sphereObjects = FindObjectsByType<RayTracedSphere>(FindObjectsSortMode.InstanceID);
-        // // Debug.Log("Spheres: " + sphereObjects.Length);
-        // Debug.Log(sphereObjects[1]);
         if (sphereObjects.Length < 1)
             return;
         var spheres = new Sphere[sphereObjects.Length];
@@ -78,8 +76,8 @@ public class RayTracingManager : MonoBehaviour
         {
             spheres[i].position = sphereObjects[i].transform.position;
             spheres[i].radius = sphereObjects[i].transform.localScale.x * 0.5f;
-            spheres[i].colour = new Vector3(1.0f, 1.0f, 1.0f);
-            spheres[i].material = sphereObjects[i].Material;
+            spheres[i].colour = new Vector3(sphereObjects[i].Material.colour.r, sphereObjects[i].Material.colour.g,
+                sphereObjects[i].Material.colour.b);
         }
 
         var stride = Marshal.SizeOf<Sphere>();
@@ -88,7 +86,12 @@ public class RayTracingManager : MonoBehaviour
         if (_spheresBuffer == null || !_spheresBuffer.IsValid() || _spheresBuffer.count != len ||
             _spheresBuffer.stride != stride)
         {
-            if (_spheresBuffer != null) _spheresBuffer.Release();
+            if (_spheresBuffer != null)
+            {
+                _spheresBuffer.Release();
+                _spheresBuffer = null;
+            }
+
             _spheresBuffer =
                 new ComputeBuffer(len, stride, ComputeBufferType.Structured);
         }
