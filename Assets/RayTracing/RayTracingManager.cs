@@ -24,7 +24,6 @@ public class RayTracingManager : MonoBehaviour
 
     private void OnRenderImage(RenderTexture source, RenderTexture dest)
     {
-        if (!Application.isPlaying) Debug.Log("WTf");
         InitMaterial();
         ScanSpheres();
         SetShaderParameters();
@@ -78,6 +77,7 @@ public class RayTracingManager : MonoBehaviour
             spheres[i].radius = sphereObjects[i].transform.localScale.x * 0.5f;
             spheres[i].colour = new Vector3(sphereObjects[i].Material.colour.r, sphereObjects[i].Material.colour.g,
                 sphereObjects[i].Material.colour.b);
+            spheres[i].emissive = sphereObjects[i].Material.emissive;
         }
 
         var stride = Marshal.SizeOf<Sphere>();

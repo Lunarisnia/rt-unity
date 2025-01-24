@@ -6,4 +6,5 @@ public struct Sphere
     public float radius;
 
     public Vector3 colour;
+    public Vector3 emissive;
 }

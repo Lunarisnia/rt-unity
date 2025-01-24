@@ -57,6 +57,7 @@ Shader "Custom/RayTracing"
                 float distance;
                 float3 normal;
                 float3 colour;
+                float3 emissive;
             };
 
             struct RayTracingMaterial
@@ -69,6 +70,7 @@ Shader "Custom/RayTracing"
                 float3 position;
                 float radius;
                 float3 colour;
+                float3 emissive;
             };
 
             bool RaySphereIntersection(Ray r, Sphere s, inout RayHit hitInfo)
@@ -96,6 +98,8 @@ Shader "Custom/RayTracing"
                 hitInfo.hitPosition = r.origin + root * r.direction;
                 hitInfo.normal = normalize(hitInfo.hitPosition - s.position);
                 hitInfo.distance = root;
+                hitInfo.emissive = s.emissive;
+                hitInfo.colour = s.colour;
                 return true;
             }
 
@@ -110,11 +114,12 @@ Shader "Custom/RayTracing"
                 for (int i = 0; i < NumOfSpheres; i++)
                 {
                     Sphere s = SpheresBuffer[i];
-                    bool hitSphere = RaySphereIntersection(r, s, hitInfo);
-                    if (hitSphere)
-                    {
-                        hitInfo.colour = s.colour;
-                    }
+                    RaySphereIntersection(r, s, hitInfo);
+                    // bool hitSphere = RaySphereIntersection(r, s, hitInfo);
+                    // if (hitSphere)
+                    // {
+                    //     hitInfo.colour = s.colour;
+                    // }
                 }
             }
 
@@ -128,41 +133,48 @@ Shader "Custom/RayTracing"
 
             Ray GetRayDirection(float2 uv)
             {
-                // float3 origin = mul(CameraLocalToWorldMatrix, float4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
-                //
-                // float3 worldSpaceProjection = mul(CameraInverseProjection, float4(uv, 0.0f, 1.0f)).xyz;
-                // float3 direction = mul(CameraLocalToWorldMatrix, float4(worldSpaceProjection, 0.0f)).xyz;
                 float3 viewPointLocal = float3(uv, 1.0f) * ViewParams;
                 float3 viewPoint = mul(CameraLocalToWorldMatrix, float4(viewPointLocal, 1.0f));
 
                 Ray r = CreateRay(CameraWorldSpacePosition, normalize(viewPoint - CameraWorldSpacePosition));
-                // Ray r = CreateRay(origin, normalize(direction));
                 return r;
             }
 
 
             float3 GetRayColor(Ray r)
             {
-                RayHit hitInfo;
-                hitInfo.distance = 1.#INF;
-                hitInfo.normal = float3(0.0f, 0.0f, 0.0f);
-                hitInfo.hitPosition = float3(0.0f, 0.0f, 0.0f);
-                hitInfo.colour = float3(0.0f, 0.0f, 0.0f);
-
                 float a = r.direction.y;
                 float3 color = float3(0.0f, 0.0f, 0.0f);
-                // TODO: Add support for multiple spheres
+                float3 throughput = float3(1.0f, 1.0f, 1.0f);
+                Ray currentRay = r;
+                for (int bounce = 0; bounce < 10; bounce++)
                 {
-                    TestSphereIntersections(r, hitInfo);
-                    color = hitInfo.colour;
-                }
+                    RayHit hitInfo;
+                    hitInfo.distance = 1.#INF;
+                    hitInfo.normal = float3(0.0f, 0.0f, 0.0f);
+                    hitInfo.hitPosition = float3(0.0f, 0.0f, 0.0f);
+                    hitInfo.colour = float3(0.0f, 0.0f, 0.0f);
+                    hitInfo.emissive = float3(0.0f, 0.0f, 0.0f);
 
-                // Missed
-                if (hitInfo.distance >= 1.#INF)
-                {
-                    color = (1.0f - a) * float3(1.0f, 1.0f, 1.0f) + a * float3(0.5f, 0.7f, 1.0f);
-                }
+                    {
+                        TestSphereIntersections(currentRay, hitInfo);
+                    }
 
+                    // Missed
+                    if (hitInfo.distance >= 1.#INF)
+                    {
+                        color += (1.0f - a) * float3(1.0f, 1.0f, 1.0f) + a * float3(0.5f, 0.7f, 1.0f);
+                        break;
+                    }
+
+                    // TODO: Fix this by adding lambertian reflection
+                    // currentRay.origin = hitInfo.hitPosition;
+                    // currentRay.direction = normalize(float3(0.0f, -1.0f, 0.0f));
+
+                    color += hitInfo.emissive * throughput;
+
+                    throughput *= hitInfo.colour;
+                }
                 return color;
             }
 
@@ -172,6 +184,7 @@ Shader "Custom/RayTracing"
 
                 Ray r = GetRayDirection(uv);
                 float3 color = GetRayColor(r);
+                // TODO: Test for randomness
 
                 return float4(color, 1.0f);
             }
