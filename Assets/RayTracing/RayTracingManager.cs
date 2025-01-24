@@ -103,7 +103,11 @@ public class RayTracingManager : MonoBehaviour
 
     private void SetShaderParameters()
     {
-        _material.SetMatrix("CameraLocalToWorldMatrix", _camera.cameraToWorldMatrix);
+        var planeHeight = _camera.nearClipPlane * Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 2.0f;
+        var planeWidth = planeHeight * _camera.aspect;
+
+        _material.SetVector("ViewParams", new Vector3(planeWidth, planeHeight, _camera.nearClipPlane));
+        _material.SetMatrix("CameraLocalToWorldMatrix", _camera.transform.localToWorldMatrix);
         _material.SetVector("CameraWorldSpacePosition", _camera.transform.position);
         _material.SetMatrix("CameraInverseProjection", _camera.projectionMatrix.inverse);
     }
