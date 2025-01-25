@@ -264,6 +264,7 @@ MonoBehaviour:
     albedo: {r: 0, g: 0, b: 0, a: 0}
     emission: {x: 1, y: 1, z: 1}
     emissionStrength: 100
+    surfaceType: 0
 --- !u!135 &593515917
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -347,7 +348,7 @@ Transform:
   m_GameObject: {fileID: 593515915}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.79, y: 5.55, z: 1.07}
+  m_LocalPosition: {x: 2.01, y: 3.49, z: 1.89}
   m_LocalScale: {x: 10.64, y: 10.64, z: 10.64}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -389,6 +390,7 @@ MonoBehaviour:
     albedo: {r: 0.03773582, g: 0.00017799958, b: 0.03213898, a: 0}
     emission: {x: 0, y: 0, z: 0}
     emissionStrength: 1
+    surfaceType: 0
 --- !u!135 &948601720
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -514,6 +516,7 @@ MonoBehaviour:
     albedo: {r: 0.18867922, g: 0.004449981, b: 0.004449981, a: 0}
     emission: {x: 0, y: 0, z: 0}
     emissionStrength: 1
+    surfaceType: 0
 --- !u!135 &1047190372
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -597,7 +600,7 @@ Transform:
   m_GameObject: {fileID: 1047190370}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.452, y: 0.683, z: -7.554}
+  m_LocalPosition: {x: 0.452, y: 0.683, z: -6.321}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -636,9 +639,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Material:
-    albedo: {r: 0.014684946, g: 0.044767883, b: 0.05660379, a: 0}
-    emission: {x: 0, y: 0, z: 0}
-    emissionStrength: 1
+    albedo: {r: 1, g: 1, b: 1, a: 0}
+    emission: {x: 1, y: 0, z: 0}
+    emissionStrength: 0
+    surfaceType: 1
 --- !u!135 &1110399801
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -721,13 +725,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1110399799}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.605, y: 0.683, z: -7.116}
+  m_LocalRotation: {x: -0, y: -0.11643777, z: -0, w: 0.99319804}
+  m_LocalPosition: {x: 2.138, y: 0.857, z: -6.232}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -13.373, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

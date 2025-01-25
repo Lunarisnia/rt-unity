@@ -107,6 +107,7 @@ Shader "Custom/RayTracing"
                 float3 emission;
                 float3 normal;
                 float emissionStrength;
+                int surfaceType;
                 bool frontFace;
             };
 
@@ -117,6 +118,7 @@ Shader "Custom/RayTracing"
                 float emissionStrength;
                 float3 center;
                 float radius;
+                int surfaceType;
             };
 
             StructuredBuffer<Sphere> SpheresBuffer;
@@ -129,7 +131,7 @@ Shader "Custom/RayTracing"
                 float h = -2.0 * dot(r.direction, oc);
                 float c = dot(oc, oc) - s.radius * s.radius;
 
-                float discriminant = h * h - 4 * a * c;
+                float discriminant = h * h - 4.0 * a * c;
                 if (discriminant < 0.0f) return false;
 
                 float root = (-h - sqrt(discriminant)) / (2.0f * a);
@@ -158,6 +160,7 @@ Shader "Custom/RayTracing"
                 hitInfo.emission = s.emission;
                 hitInfo.albedo = s.albedo;
                 hitInfo.emissionStrength = s.emissionStrength;
+                hitInfo.surfaceType = s.surfaceType;
                 return true;
             }
 
@@ -170,6 +173,7 @@ Shader "Custom/RayTracing"
                 h.normal = 0.0;
                 h.hitPosition = 0.0;
                 h.emissionStrength = 0.0;
+                h.surfaceType = 0;
 
                 return h;
             }
@@ -182,6 +186,7 @@ Shader "Custom/RayTracing"
                     RaySphereIntersection(r, SpheresBuffer[i], hitInfo);
                 }
             }
+
 
             int NumberOfBounces;
 
@@ -197,7 +202,7 @@ Shader "Custom/RayTracing"
 
                     if (hitInfo.distance >= 1.#INF)
                     {
-                        // color += ((1.0 - a) * float3(0.8, 0.8, 0.8) + float3(0.3, 0.3, 0.3) * a);
+                        color += ((1.0f - a) * float3(0.2f, 0.1f, 0.2f) + a * float3(0.5f, 0.7f, 1.0f)) * throughput;
                         break;
                     }
 
@@ -205,7 +210,14 @@ Shader "Custom/RayTracing"
                     color += emittedLight * throughput;
 
                     r.origin = hitInfo.hitPosition;
-                    r.direction = hitInfo.normal + RandomDirection(rngState);
+
+                    if (hitInfo.surfaceType == 0)
+                    {
+                        r.direction = normalize(hitInfo.normal + RandomDirection(rngState));
+                    } else if (hitInfo.surfaceType == 1)
+                    {
+                        r.direction = normalize(reflect(r.direction, hitInfo.normal));
+                    }
 
                     throughput *= hitInfo.albedo;
                 }
@@ -217,6 +229,7 @@ Shader "Custom/RayTracing"
             int Frame;
             int RayPerPixel;
 
+            // TODO: add quad intersection maybe refraction
             float4 frag(v2f i) : SV_Target
             {
                 // Create seed for random number generator
