@@ -1,4 +1,4 @@
-Shader "Custom/Accumulate"
+Shader "Hidden/Accumulate"
 {
     Properties
     {

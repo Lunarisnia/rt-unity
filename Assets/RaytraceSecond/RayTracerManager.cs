@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
@@ -5,30 +6,67 @@ using UnityEngine.Experimental.Rendering;
 [ImageEffectAllowedInSceneView]
 public class RayTracerManager : MonoBehaviour
 {
-    // TODO: Render color of UV to the camera
-
     public Shader RayTracingShader;
+    public Shader AccumulateShader;
+    public int RayPerPixel = 100;
+    public int NumberOfBounces = 30;
+    private ComputeBuffer _spheresBuffer;
+    private Material accumulateMaterial;
+
+    private int frame;
 
     private Material rayTracingMaterial;
     private RenderTexture resultTexture;
 
     private void OnRenderImage(RenderTexture src, RenderTexture target)
     {
+        var isSceneView = Camera.current.name == "SceneCamera";
+        if (isSceneView)
+        {
+            InitFrame();
+            Graphics.Blit(null, resultTexture, rayTracingMaterial);
+            Graphics.Blit(resultTexture, target);
+        }
+        else
+        {
+            InitFrame();
+            // var prevFrame = RenderTexture.GetTemporary(src.width, src.height, 0, GraphicsFormat.R32G32B32A32_SFloat);
+            // Graphics.Blit(resultTexture, prevFrame);
+            // accumulateMaterial.SetTexture("_PrevFrame", prevFrame);
+            // accumulateMaterial.SetInteger("Frame", frame);
+
+            // var currentFrame = RenderTexture.GetTemporary(src.width, src.height, 0, GraphicsFormat.R32G32B32A32_SFloat);
+            // Graphics.Blit(null, currentFrame, rayTracingMaterial);
+
+            // Graphics.Blit(currentFrame, resultTexture, accumulateMaterial);
+
+            Graphics.Blit(null, resultTexture, rayTracingMaterial);
+            Graphics.Blit(resultTexture, target);
+
+
+            // RenderTexture.ReleaseTemporary(prevFrame);
+            // RenderTexture.ReleaseTemporary(currentFrame);
+
+            frame += Application.isPlaying ? 1 : 0;
+        }
+
+        resultTexture.Release();
+    }
+
+    private void InitFrame()
+    {
         InitMaterial();
         InitTexture("RayTracing", Screen.width, Screen.height, GraphicsFormat.R32G32B32A32_SFloat, FilterMode.Bilinear,
             0,
             false);
         UpdateCameraParams();
-
-        Graphics.Blit(null, resultTexture, rayTracingMaterial);
-        Graphics.Blit(resultTexture, target);
-
-        resultTexture.Release();
+        ScanSpheres();
     }
 
     private void InitMaterial()
     {
         rayTracingMaterial = new Material(RayTracingShader);
+        accumulateMaterial = new Material(AccumulateShader);
     }
 
     private void InitTexture(string name, int width, int height, GraphicsFormat format, FilterMode filterMode,
@@ -50,6 +88,51 @@ public class RayTracerManager : MonoBehaviour
 
     private void UpdateCameraParams()
     {
-        rayTracingMaterial.SetMatrix("CameraLocalToWorldMatrix", transform.localToWorldMatrix);
+        var cam = Camera.current;
+        var viewportHeight = cam.nearClipPlane * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) * 2.0f;
+        var viewportWidth = viewportHeight * cam.aspect;
+
+        rayTracingMaterial.SetVector("ViewParams", new Vector3(viewportWidth, viewportHeight, cam.nearClipPlane));
+        rayTracingMaterial.SetMatrix("CameraLocalToWorldMatrix", cam.transform.localToWorldMatrix);
+        rayTracingMaterial.SetInteger("Frame", frame);
+        rayTracingMaterial.SetInteger("RayPerPixel", RayPerPixel);
+        rayTracingMaterial.SetInteger("NumberOfBounces", NumberOfBounces);
+    }
+
+    private void ScanSpheres()
+    {
+        var sphereObjects = FindObjectsByType<RayTracedSphere>(FindObjectsSortMode.None);
+
+        var spheres = new Sphere[sphereObjects.Length];
+        for (var i = 0; i < sphereObjects.Length; i++)
+        {
+            spheres[i].center = sphereObjects[i].transform.position;
+            spheres[i].radius = sphereObjects[i].transform.localScale.x * 0.5f;
+            spheres[i].albedo = new Vector3(sphereObjects[i].Material.albedo.r, sphereObjects[i].Material.albedo.g,
+                sphereObjects[i].Material.albedo.b);
+            spheres[i].emission = sphereObjects[i].Material.emission;
+            spheres[i].emissionStrength = sphereObjects[i].Material.emissionStrength;
+        }
+
+        var stride = Marshal.SizeOf<Sphere>();
+        var len = sphereObjects.Length;
+
+
+        if (_spheresBuffer == null || !_spheresBuffer.IsValid() || _spheresBuffer.count != len ||
+            _spheresBuffer.stride != stride)
+        {
+            if (_spheresBuffer != null)
+            {
+                _spheresBuffer.Release();
+                _spheresBuffer = null;
+            }
+
+            _spheresBuffer =
+                new ComputeBuffer(len, stride, ComputeBufferType.Structured);
+        }
+
+        _spheresBuffer.SetData(spheres);
+        rayTracingMaterial.SetInt("NumOfSpheres", spheres.Length);
+        rayTracingMaterial.SetBuffer("SpheresBuffer", _spheresBuffer);
     }
 }

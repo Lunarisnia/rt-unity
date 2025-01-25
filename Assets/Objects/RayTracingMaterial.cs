@@ -4,6 +4,7 @@ using UnityEngine;
 [Serializable]
 public struct RayTracingMaterial
 {
-    public Color colour;
-    public Vector3 emissive;
+    public Color albedo;
+    public Vector3 emission;
+    public float emissionStrength;
 }

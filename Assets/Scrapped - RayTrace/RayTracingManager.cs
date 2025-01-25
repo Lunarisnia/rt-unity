@@ -114,11 +114,11 @@ public class RayTracingManager : MonoBehaviour
         var spheres = new Sphere[sphereObjects.Length];
         for (var i = 0; i < sphereObjects.Length; i++)
         {
-            spheres[i].position = sphereObjects[i].transform.position;
-            spheres[i].radius = sphereObjects[i].transform.localScale.x * 0.5f;
-            spheres[i].colour = new Vector3(sphereObjects[i].Material.colour.r, sphereObjects[i].Material.colour.g,
-                sphereObjects[i].Material.colour.b);
-            spheres[i].emissive = sphereObjects[i].Material.emissive;
+            // spheres[i].position = sphereObjects[i].transform.position;
+            // spheres[i].radius = sphereObjects[i].transform.localScale.x * 0.5f;
+            // spheres[i].colour = new Vector3(sphereObjects[i].Material.colour.r, sphereObjects[i].Material.colour.g,
+            //     sphereObjects[i].Material.colour.b);
+            // spheres[i].emissive = sphereObjects[i].Material.emissive;
         }
 
         var stride = Marshal.SizeOf<Sphere>();
