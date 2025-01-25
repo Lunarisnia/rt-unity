@@ -1,12 +1,17 @@
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 
 [ExecuteAlways]
 [ImageEffectAllowedInSceneView]
 public class RayTracingManager : MonoBehaviour
 {
+    private const GraphicsFormat RenderFormat = GraphicsFormat.R32G32B32A32_SFloat;
+
     // We declare our shader code to be imported
     public Shader MaterialShader;
+    public Shader AccumulateShader;
+    private Material _accumulateMaterial;
 
     private Camera _camera;
     private Material _material;
@@ -16,6 +21,8 @@ public class RayTracingManager : MonoBehaviour
     // Our Temporary Render target to draw into
     private RenderTexture _target;
     private ComputeBuffer secondSphere;
+
+    private int tick;
 
     private void Awake()
     {
@@ -28,23 +35,57 @@ public class RayTracingManager : MonoBehaviour
         ScanSpheres();
         SetShaderParameters();
         // Call our custom Render
-        Render(dest);
+        Render(source, dest);
     }
 
-    private void Render(RenderTexture dest)
+    private void Render(RenderTexture source, RenderTexture dest)
     {
-        // Initialize Render Target
-        // InitRenderTexture();
+        var isSceneCam = Camera.current.name == "SceneCamera";
+        if (isSceneCam)
+        {
+            InitRenderTexture();
+            var currentFrame = RenderTexture.GetTemporary(source.width, source.height, 0, RenderFormat);
+            Graphics.Blit(null, currentFrame, _material);
+            Graphics.Blit(currentFrame, _target);
 
-        // Run the shader and render to the screen
-        Graphics.Blit(null, dest, _material);
+            // Run the shader and render to the screen
+            Graphics.Blit(_target, dest);
 
-        // Graphics.Blit(_target, dest);
+            RenderTexture.ReleaseTemporary(currentFrame);
+        }
+        else
+        {
+            // Initialize Render Target
+            InitRenderTexture();
+            var prevFrameCopy =
+                RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.ARGBFloat);
+            Graphics.Blit(_target, prevFrameCopy);
+
+            _accumulateMaterial.SetInt("Frame", tick);
+            _accumulateMaterial.SetTexture("_PrevFrame", prevFrameCopy);
+            // Graphics.Blit(null, _target, _accumulateMaterial);
+
+            // Render the current frame
+            var currentFrame =
+                RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.ARGBFloat);
+            Graphics.Blit(null, currentFrame, _material);
+
+            Graphics.Blit(currentFrame, _target, _accumulateMaterial);
+
+            // Run the shader and render to the screen
+            Graphics.Blit(_target, dest);
+
+            RenderTexture.ReleaseTemporary(prevFrameCopy);
+            RenderTexture.ReleaseTemporary(currentFrame);
+        }
+
+        if (Application.isPlaying) tick += 1;
     }
 
     private void InitMaterial()
     {
         _material = new Material(MaterialShader);
+        _accumulateMaterial = new Material(AccumulateShader);
     }
 
     private void InitRenderTexture()
@@ -110,5 +151,6 @@ public class RayTracingManager : MonoBehaviour
         _material.SetMatrix("CameraLocalToWorldMatrix", _camera.transform.localToWorldMatrix);
         _material.SetVector("CameraWorldSpacePosition", _camera.transform.position);
         _material.SetMatrix("CameraInverseProjection", _camera.projectionMatrix.inverse);
+        _material.SetInt("Frame", tick);
     }
 }
