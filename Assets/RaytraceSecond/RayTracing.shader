@@ -297,6 +297,8 @@ Shader "Custom/RayTracing"
                 return h;
             }
 
+            float WallSmoothness;
+
             void TestSceneIntersection(Ray r, inout HitInfo hitInfo)
             {
                 // Spheres
@@ -313,7 +315,7 @@ Shader "Custom/RayTracing"
                     float3 b = float3(12.0, -12.0, depth);
                     float3 c = float3(12.0, 12.0, depth);
                     float3 d = float3(-12.0, 12.0, depth);
-                    Quad q1 = CreateQuad(a, b, c, d, float3(1.0, 1.0, 1.0), 0.0, 0.0, 1.0);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(1.0, 1.0, 1.0), 0.0, 0.0, WallSmoothness);
                     IntersectQuad(q1, r, hitInfo);
                 }
                 {
@@ -322,7 +324,7 @@ Shader "Custom/RayTracing"
                     float3 b = float3(-12.0, -12.0, depth - 30.0);
                     float3 c = float3(-12.0, 12.0, depth - 30.0);
                     float3 d = float3(-12.0, 12.0, depth);
-                    Quad q1 = CreateQuad(a, b, c, d, float3(1.0, 1.0, 1.0), 0.0, 0.0, 1.0);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(1.0, 1.0, 1.0), 0.0, 0.0, WallSmoothness);
                     IntersectQuad(q1, r, hitInfo);
                 }
                 {
@@ -331,7 +333,7 @@ Shader "Custom/RayTracing"
                     float3 b = float3(12.0, 12.0, depth - 30.0);
                     float3 c = float3(12.0, -12.0, depth - 30.0);
                     float3 d = float3(12.0, -12.0, depth);
-                    Quad q1 = CreateQuad(a, b, c, d, float3(0.8, 0.8, 0.8), 0.0, 0.0, 1.0);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(0.8, 0.8, 0.8), 0.0, 0.0, WallSmoothness);
                     IntersectQuad(q1, r, hitInfo);
                 }
                 {
@@ -349,7 +351,7 @@ Shader "Custom/RayTracing"
                     float3 b = float3(12.0, 12.0, depth - 30.0);
                     float3 c = float3(-12.0, 12.0, depth - 30.0);
                     float3 d = float3(-12.0, 12.0, depth);
-                    Quad q1 = CreateQuad(a, b, c, d, float3(0.4, 0.7, 0.8), 0.0, 0.0, 0.0);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(0.4, 0.7, 0.8), 1.0, 0.0, 0.0);
                     IntersectQuad(q1, r, hitInfo);
                 }
                 {
@@ -358,7 +360,7 @@ Shader "Custom/RayTracing"
                     float3 b = float3(-12.0, 12.0, depth-30.0);
                     float3 c = float3(-12.0, -12.0, depth-30.0);
                     float3 d = float3(12.0, -12.0, depth-30.0);
-                    Quad q1 = CreateQuad(a, b, c, d, float3(1.0, 1.0, 1.0), 0.0, 0.0, 1.0);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(1.0, 1.0, 1.0), 0.0, 0.0, WallSmoothness);
                     IntersectQuad(q1, r, hitInfo);
                 }
             }
@@ -400,7 +402,6 @@ Shader "Custom/RayTracing"
             int Frame;
             int RayPerPixel;
 
-            // TODO: add quad intersection maybe refraction
             float4 frag(v2f i) : SV_Target
             {
                 // Create seed for random number generator

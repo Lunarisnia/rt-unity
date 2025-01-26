@@ -13,6 +13,9 @@ public class RayTracerManager : MonoBehaviour
 
     [Range(0, 100)] public int NumberOfBounces = 30;
 
+    [Header("Wall Config")] [Range(0.0f, 1.0f)]
+    public float WallSmoothness;
+
     private ComputeBuffer _spheresBuffer;
     private Material accumulateMaterial;
     private RenderTexture copy;
@@ -135,6 +138,7 @@ public class RayTracerManager : MonoBehaviour
         rayTracingMaterial.SetInteger("Frame", frame);
         rayTracingMaterial.SetInteger("RayPerPixel", RayPerPixel);
         rayTracingMaterial.SetInteger("NumberOfBounces", NumberOfBounces);
+        rayTracingMaterial.SetFloat("WallSmoothness", WallSmoothness);
     }
 
     private void ScanSpheres()
