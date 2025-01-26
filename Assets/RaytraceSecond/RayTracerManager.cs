@@ -8,8 +8,11 @@ public class RayTracerManager : MonoBehaviour
 {
     public Shader RayTracingShader;
     public Shader AccumulateShader;
-    public int RayPerPixel = 100;
-    public int NumberOfBounces = 30;
+
+    [Header("Ray Config")] [Range(0, 100)] public int RayPerPixel = 10;
+
+    [Range(0, 100)] public int NumberOfBounces = 30;
+
     private ComputeBuffer _spheresBuffer;
     private Material accumulateMaterial;
     private RenderTexture copy;
