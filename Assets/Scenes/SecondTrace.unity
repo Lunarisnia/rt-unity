@@ -226,7 +226,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   RayTracingShader: {fileID: 4800000, guid: cc2b25f559857f843b27449cc549519d, type: 3}
   AccumulateShader: {fileID: 4800000, guid: 69665398347334d4b9c24193145997b6, type: 3}
-  RayPerPixel: 100
+  RayPerPixel: 9
   NumberOfBounces: 30
 --- !u!1 &593515915
 GameObject:
@@ -264,7 +264,7 @@ MonoBehaviour:
     albedo: {r: 0, g: 0, b: 0, a: 0}
     emission: {x: 1, y: 1, z: 1}
     emissionStrength: 8.1
-    surfaceType: 0
+    smoothness: 0
 --- !u!135 &593515917
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -348,7 +348,7 @@ Transform:
   m_GameObject: {fileID: 593515915}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.01, y: 5.39, z: 1.89}
+  m_LocalPosition: {x: 3.21, y: -1, z: 27.68}
   m_LocalScale: {x: 6.35, y: 6.35, z: 6.35}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -373,7 +373,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &948601719
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -390,7 +390,7 @@ MonoBehaviour:
     albedo: {r: 0.03773582, g: 0.00017799958, b: 0.03213898, a: 0}
     emission: {x: 0, y: 0, z: 0}
     emissionStrength: 1
-    surfaceType: 0
+    smoothness: 0
 --- !u!135 &948601720
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -516,7 +516,7 @@ MonoBehaviour:
     albedo: {r: 0.18867922, g: 0.004449981, b: 0.004449981, a: 0}
     emission: {x: 0, y: 0, z: 0}
     emissionStrength: 1
-    surfaceType: 0
+    smoothness: 0
 --- !u!135 &1047190372
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -600,7 +600,7 @@ Transform:
   m_GameObject: {fileID: 1047190370}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.452, y: 0.731, z: -6.321}
+  m_LocalPosition: {x: 0.452, y: 0.731, z: 12.77}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -642,7 +642,7 @@ MonoBehaviour:
     albedo: {r: 1, g: 1, b: 1, a: 0}
     emission: {x: 1, y: 0, z: 0}
     emissionStrength: 0
-    surfaceType: 1
+    smoothness: 1
 --- !u!135 &1110399801
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -726,7 +726,7 @@ Transform:
   m_GameObject: {fileID: 1110399799}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.11643777, z: -0, w: 0.99319804}
-  m_LocalPosition: {x: 2.138, y: 0.857, z: -6.232}
+  m_LocalPosition: {x: 1.951, y: 0.857, z: 12.69}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -768,7 +768,7 @@ MonoBehaviour:
     albedo: {r: 0, g: 0.55536914, b: 1, a: 0}
     emission: {x: 0, y: 0, z: 0}
     emissionStrength: 1
-    surfaceType: 0
+    smoothness: 0
 --- !u!135 &1190623203
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -852,7 +852,7 @@ Transform:
   m_GameObject: {fileID: 1190623201}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.28, y: 0.19, z: -12.69}
+  m_LocalPosition: {x: 4.28, y: -7.64, z: 29.31}
   m_LocalScale: {x: 4.43, y: 4.43, z: 4.43}
   m_ConstrainProportionsScale: 1
   m_Children: []

@@ -107,7 +107,6 @@ Shader "Custom/RayTracing"
                 float3 emission;
                 float3 normal;
                 float emissionStrength;
-                int surfaceType;
                 bool frontFace;
                 float smoothness;
             };
@@ -119,7 +118,6 @@ Shader "Custom/RayTracing"
                 float emissionStrength;
                 float3 center;
                 float radius;
-                int surfaceType;
                 float smoothness;
             };
 
@@ -162,9 +160,127 @@ Shader "Custom/RayTracing"
                 hitInfo.emission = s.emission;
                 hitInfo.albedo = s.albedo;
                 hitInfo.emissionStrength = s.emissionStrength;
-                hitInfo.surfaceType = s.surfaceType;
                 hitInfo.smoothness = s.smoothness;
                 return true;
+            }
+
+            struct Quad
+            {
+                float3 a, b, c, d;
+                float smoothness;
+                float3 albedo;
+                float3 emission;
+                float emissionStrength;
+            };
+
+            float ScalarTriple(float3 u, float3 v, float3 w)
+            {
+                return dot(cross(u, v), w);
+            }
+
+            bool IntersectQuad(in Quad quad, in Ray r, inout HitInfo info)
+            {
+                float3 a = quad.a;
+                float3 b = quad.b;
+                float3 c = quad.c;
+                float3 d = quad.d;
+                // calculate normal and flip vertices order if needed
+                float3 normal = normalize(cross(c - a, c - b));
+                if (dot(normal, r.direction) > 0.0f)
+                {
+                    normal *= -1.0f;
+
+                    float3 temp = d;
+                    d = a;
+                    a = temp;
+
+                    temp = b;
+                    b = c;
+                    c = temp;
+                }
+
+                float3 p = r.origin;
+                float3 q = r.origin + r.direction;
+                float3 pq = q - p;
+                float3 pa = a - p;
+                float3 pb = b - p;
+                float3 pc = c - p;
+
+                // determine which triangle to test against by testing against diagonal first
+                float3 m = cross(pc, pq);
+                float v = dot(pa, m);
+                float3 intersectPos;
+                if (v >= 0.0f)
+                {
+                    // test against triangle a,b,c
+                    float u = -dot(pb, m);
+                    if (u < 0.0f) return false;
+                    float w = ScalarTriple(pq, pb, pa);
+                    if (w < 0.0f) return false;
+                    float denom = 1.0f / (u + v + w);
+                    u *= denom;
+                    v *= denom;
+                    w *= denom;
+                    intersectPos = u * a + v * b + w * c;
+                }
+                else
+                {
+                    float3 pd = d - p;
+                    float u = dot(pd, m);
+                    if (u < 0.0f) return false;
+                    float w = ScalarTriple(pq, pa, pd);
+                    if (w < 0.0f) return false;
+                    v = -v;
+                    float denom = 1.0f / (u + v + w);
+                    u *= denom;
+                    v *= denom;
+                    w *= denom;
+                    intersectPos = u * a + v * d + w * c;
+                }
+
+                float dist;
+                if (abs(r.direction.x) > 0.1f)
+                {
+                    dist = (intersectPos.x - r.origin.x) / r.direction.x;
+                }
+                else if (abs(r.direction.y) > 0.1f)
+                {
+                    dist = (intersectPos.y - r.origin.y) / r.direction.y;
+                }
+                else
+                {
+                    dist = (intersectPos.z - r.origin.z) / r.direction.z;
+                }
+
+                if (dist > 0.001f && dist < info.distance)
+                {
+                    info.distance = dist;
+                    info.normal = normal;
+                    info.hitPosition = RayAt(r, dist);
+                    info.emission = quad.emission;
+                    info.emissionStrength = quad.emissionStrength;
+                    info.smoothness = quad.smoothness;
+                    info.albedo = quad.albedo;
+                    info.frontFace = true;
+                    return true;
+                }
+
+                return false;
+            }
+
+            Quad CreateQuad(float3 a, float3 b, float3 c, float3 d, float3 albedo, float3 emission, float emissionStrength, float smoothness)
+            {
+                Quad q;
+                q.a = a;
+                q.b = b;
+                q.c = c;
+                q.d = d;
+                q.albedo = albedo;
+                q.emission = emission;
+                q.emissionStrength = emissionStrength;
+                q.smoothness = smoothness;
+
+                return q;
             }
 
             HitInfo CreateHitInfo()
@@ -176,7 +292,6 @@ Shader "Custom/RayTracing"
                 h.normal = 0.0;
                 h.hitPosition = 0.0;
                 h.emissionStrength = 0.0;
-                h.surfaceType = 0;
                 h.smoothness = 0.0;
 
                 return h;
@@ -188,6 +303,54 @@ Shader "Custom/RayTracing"
                 for (int i = 0; i < NumOfSpheres; i++)
                 {
                     RaySphereIntersection(r, SpheresBuffer[i], hitInfo);
+                }
+
+                // Quad
+                float depth = 40.15;
+                {
+                    // Backwall
+                    float3 a = float3(-12.0, -12.0, depth);
+                    float3 b = float3(12.0, -12.0, depth);
+                    float3 c = float3(12.0, 12.0, depth);
+                    float3 d = float3(-12.0, 12.0, depth);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(1.0, 1.0, 0.0), 0.0, 0.0, 0.0);
+                    IntersectQuad(q1, r, hitInfo);
+                }
+                {
+                    // LeftWall
+                    float3 a = float3(-12.0, -12.0, depth);
+                    float3 b = float3(-12.0, -12.0, depth - 30.0);
+                    float3 c = float3(-12.0, 12.0, depth - 30.0);
+                    float3 d = float3(-12.0, 12.0, depth);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
+                    IntersectQuad(q1, r, hitInfo);
+                }
+                {
+                    // RightWall
+                    float3 a = float3(12.0, 12.0, depth);
+                    float3 b = float3(12.0, 12.0, depth - 30.0);
+                    float3 c = float3(12.0, -12.0, depth - 30.0);
+                    float3 d = float3(12.0, -12.0, depth);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(0.2, 0.2, 0.1), 0.0, 0.0, 0.0);
+                    IntersectQuad(q1, r, hitInfo);
+                }
+                {
+                    // BottomWall
+                    float3 a = float3(-12.0, -12.0, depth);
+                    float3 b = float3(-12.0, -12.0, depth - 30.0);
+                    float3 c = float3(12.0, -12.0, depth - 30.0);
+                    float3 d = float3(12.0, -12.0, depth);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(0.4, 0.7, 0.8), 0.0, 0.0, 0.0);
+                    IntersectQuad(q1, r, hitInfo);
+                }
+                {
+                    // BottomWall
+                    float3 a = float3(12.0, 12.0, depth);
+                    float3 b = float3(12.0, 12.0, depth - 30.0);
+                    float3 c = float3(-12.0, 12.0, depth - 30.0);
+                    float3 d = float3(-12.0, 12.0, depth);
+                    Quad q1 = CreateQuad(a, b, c, d, float3(0.4, 0.7, 0.8), 0.0, 0.0, 0.0);
+                    IntersectQuad(q1, r, hitInfo);
                 }
             }
 
@@ -206,7 +369,7 @@ Shader "Custom/RayTracing"
 
                     if (hitInfo.distance >= 1.#INF)
                     {
-                        color += ((1.0f - a) * float3(0.2f, 0.1f, 0.2f) + a * float3(0.5f, 0.7f, 1.0f)) * throughput;
+                        // color += ((1.0f - a) * float3(0.2f, 0.1f, 0.2f) + a * float3(0.5f, 0.7f, 1.0f)) * throughput;
                         break;
                     }
 

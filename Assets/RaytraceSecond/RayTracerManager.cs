@@ -12,6 +12,7 @@ public class RayTracerManager : MonoBehaviour
     public int NumberOfBounces = 30;
     private ComputeBuffer _spheresBuffer;
     private Material accumulateMaterial;
+    private RenderTexture copy;
 
     private int frame;
 
@@ -30,33 +31,36 @@ public class RayTracerManager : MonoBehaviour
         else
         {
             InitFrame();
-            // var prevFrame = RenderTexture.GetTemporary(src.width, src.height, 0, GraphicsFormat.R32G32B32A32_SFloat);
-            // Graphics.Blit(resultTexture, prevFrame);
-            // accumulateMaterial.SetTexture("_PrevFrame", prevFrame);
-            // accumulateMaterial.SetInteger("Frame", frame);
+            var prevFrameCopy =
+                RenderTexture.GetTemporary(src.width, src.height, 0, GraphicsFormat.R32G32B32A32_SFloat);
+            Graphics.Blit(resultTexture, prevFrameCopy);
 
-            // var currentFrame = RenderTexture.GetTemporary(src.width, src.height, 0, GraphicsFormat.R32G32B32A32_SFloat);
-            // Graphics.Blit(null, currentFrame, rayTracingMaterial);
+            var currentFrame = RenderTexture.GetTemporary(src.width, src.height, 0, GraphicsFormat.R32G32B32A32_SFloat);
+            Graphics.Blit(null, currentFrame, rayTracingMaterial);
 
-            // Graphics.Blit(currentFrame, resultTexture, accumulateMaterial);
+            accumulateMaterial.SetInteger("Frame", frame);
+            accumulateMaterial.SetTexture("_PrevFrame", prevFrameCopy);
+            Graphics.Blit(currentFrame, resultTexture, accumulateMaterial);
 
-            Graphics.Blit(null, resultTexture, rayTracingMaterial);
             Graphics.Blit(resultTexture, target);
 
 
-            // RenderTexture.ReleaseTemporary(prevFrame);
-            // RenderTexture.ReleaseTemporary(currentFrame);
+            RenderTexture.ReleaseTemporary(currentFrame);
+            RenderTexture.ReleaseTemporary(prevFrameCopy);
+            RenderTexture.ReleaseTemporary(currentFrame);
 
             frame += Application.isPlaying ? 1 : 0;
         }
-
-        resultTexture.Release();
     }
 
     private void InitFrame()
     {
         InitMaterial();
         InitTexture("RayTracing", Screen.width, Screen.height, GraphicsFormat.R32G32B32A32_SFloat, FilterMode.Bilinear,
+            0,
+            false);
+        InitTextureCopy("RayTracingCopy", Screen.width, Screen.height, GraphicsFormat.R32G32B32A32_SFloat,
+            FilterMode.Bilinear,
             0,
             false);
         UpdateCameraParams();
@@ -69,10 +73,41 @@ public class RayTracerManager : MonoBehaviour
         accumulateMaterial = new Material(AccumulateShader);
     }
 
+    private void InitTextureCopy(string name, int width, int height, GraphicsFormat format, FilterMode filterMode,
+        int depthMode,
+        bool useMipMaps)
+    {
+        // If the render target is empty and the screen size doesn't change we stop
+        if (copy != null && Screen.width == copy.width &&
+            Screen.height == copy.height) return;
+        // If somehow render target is not null release the existing render target so it doesn't linger in the memory
+        if (copy != null)
+            copy.Release();
+
+        var texture = new RenderTexture(width, height, depthMode);
+        texture.graphicsFormat = format;
+        texture.enableRandomWrite = true;
+        texture.autoGenerateMips = false;
+        texture.useMipMap = useMipMaps;
+        texture.Create();
+
+        texture.name = name;
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = filterMode;
+        copy = texture;
+    }
+
     private void InitTexture(string name, int width, int height, GraphicsFormat format, FilterMode filterMode,
         int depthMode,
         bool useMipMaps)
     {
+        // If the render target is empty and the screen size doesn't change we stop
+        if (resultTexture != null && Screen.width == resultTexture.width &&
+            Screen.height == resultTexture.height) return;
+        // If somehow render target is not null release the existing render target so it doesn't linger in the memory
+        if (resultTexture != null)
+            resultTexture.Release();
+
         var texture = new RenderTexture(width, height, depthMode);
         texture.graphicsFormat = format;
         texture.enableRandomWrite = true;
@@ -112,7 +147,6 @@ public class RayTracerManager : MonoBehaviour
                 sphereObjects[i].Material.albedo.b);
             spheres[i].emission = sphereObjects[i].Material.emission;
             spheres[i].emissionStrength = sphereObjects[i].Material.emissionStrength;
-            spheres[i].surfaceType = sphereObjects[i].Material.surfaceType;
             spheres[i].smoothness = sphereObjects[i].Material.smoothness;
         }
 

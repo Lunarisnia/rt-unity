@@ -7,6 +7,5 @@ public struct Sphere
     public float emissionStrength;
     public Vector3 center;
     public float radius;
-    public int surfaceType;
     public float smoothness;
 }
