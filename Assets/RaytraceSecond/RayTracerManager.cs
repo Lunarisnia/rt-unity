@@ -113,6 +113,7 @@ public class RayTracerManager : MonoBehaviour
             spheres[i].emission = sphereObjects[i].Material.emission;
             spheres[i].emissionStrength = sphereObjects[i].Material.emissionStrength;
             spheres[i].surfaceType = sphereObjects[i].Material.surfaceType;
+            spheres[i].smoothness = sphereObjects[i].Material.smoothness;
         }
 
         var stride = Marshal.SizeOf<Sphere>();

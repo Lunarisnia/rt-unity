@@ -109,6 +109,7 @@ Shader "Custom/RayTracing"
                 float emissionStrength;
                 int surfaceType;
                 bool frontFace;
+                float smoothness;
             };
 
             struct Sphere
@@ -119,6 +120,7 @@ Shader "Custom/RayTracing"
                 float3 center;
                 float radius;
                 int surfaceType;
+                float smoothness;
             };
 
             StructuredBuffer<Sphere> SpheresBuffer;
@@ -161,6 +163,7 @@ Shader "Custom/RayTracing"
                 hitInfo.albedo = s.albedo;
                 hitInfo.emissionStrength = s.emissionStrength;
                 hitInfo.surfaceType = s.surfaceType;
+                hitInfo.smoothness = s.smoothness;
                 return true;
             }
 
@@ -174,6 +177,7 @@ Shader "Custom/RayTracing"
                 h.hitPosition = 0.0;
                 h.emissionStrength = 0.0;
                 h.surfaceType = 0;
+                h.smoothness = 0.0;
 
                 return h;
             }
@@ -210,14 +214,9 @@ Shader "Custom/RayTracing"
                     color += emittedLight * throughput;
 
                     r.origin = hitInfo.hitPosition;
-
-                    if (hitInfo.surfaceType == 0)
-                    {
-                        r.direction = normalize(hitInfo.normal + RandomDirection(rngState));
-                    } else if (hitInfo.surfaceType == 1)
-                    {
-                        r.direction = normalize(reflect(r.direction, hitInfo.normal));
-                    }
+                    float3 diffuseDir = normalize(hitInfo.normal + RandomDirection(rngState));
+                    float3 specularDir = normalize(reflect(r.direction, hitInfo.normal));
+                    r.direction = normalize(lerp(diffuseDir, specularDir, hitInfo.smoothness));
 
                     throughput *= hitInfo.albedo;
                 }
@@ -254,7 +253,6 @@ Shader "Custom/RayTracing"
                 {
                     color += GetRayColor(r, rngState);
                 }
-
 
                 return float4(color / float(rayPerPixel), 1.0);
             }
